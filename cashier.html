@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnacItUp — Cashier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fcfaf8; --surface: #ffffff; --surface2: #f5f0ea;
+      --accent: #d6a3a3; --green: #8cb38c; --red: #d98c8c; --yellow: #d1b87a; --blue: #8ca3d9;
+      --text: #4a4036; --muted: #a3988e; --border: rgba(74, 64, 54, 0.08);
+      --radius: 16px; --font-head: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+    nav {
+      background: rgba(252, 250, 248, 0.95); border-bottom: 1px solid var(--border);
+      padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; backdrop-filter: blur(20px);
+    }
+    .logo { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; }
+    .logo span { color: var(--accent); }
+    .live-badge { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .main { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+    .revenue-bar {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 24px; display: flex; gap: 40px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .rev-item {}
+    .rev-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .rev-value { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; }
+    .rev-value.orange { color: var(--accent); }
+    .rev-value.green { color: var(--green); }
+    .rev-value.blue { color: var(--blue); }
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--surface2); }
+    th { padding: 13px 16px; text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
+    td { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
+    tr:hover td { background: rgba(74, 64, 54, 0.02); }
+    .badge {
+      padding: 4px 10px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .badge.paid { background: rgba(140, 179, 140, 0.15); color: var(--green); }
+    .badge.pending-pay { background: rgba(209, 184, 122, 0.15); color: var(--yellow); }
+    .badge.picked { background: rgba(140, 163, 217, 0.15); color: var(--blue); }
+    .badge.waiting { background: rgba(214, 163, 163, 0.15); color: var(--accent); }
+    .order-id { font-family: var(--font-head); color: var(--accent); font-weight: 700; font-size: 0.85rem; }
+    .items-cell { max-width: 220px; }
+    .items-cell div { font-size: 0.82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-confirm {
+      background: var(--green); color: white; border: none; padding: 8px 14px;
+      border-radius: 8px; font-family: var(--font-body); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+    }
+    .btn-confirm:hover { opacity: 0.85; }
+    .btn-done { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; cursor: default; }
+    .empty { text-align: center; padding: 60px; color: var(--muted); }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; animation: ti 0.3s ease; }
+    @keyframes ti { from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:translateX(0);} }
+    .toast.success { border-color: rgba(140, 179, 140, 0.4); color: var(--green); }
+    .search-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .search-row input {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 10px 16px; border-radius: 10px; font-family: var(--font-body); font-size: 0.9rem;
+      outline: none; width: 240px; transition: border-color 0.2s;
+    }
+    .search-row input:focus { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">SnacIt<span>Up</span> — Cashier</div>
+    <div class="live-badge"><span class="dot"></span> Live feed</div>
+  </nav>
+
+  <div class="main">
+    <div class="revenue-bar">
+      <div class="rev-item">
+        <div class="rev-label">Total Orders Today</div>
+        <div class="rev-value orange" id="rTotal">0</div>
+      </div>
+      <div class="rev-item">
+        <div class="rev-label">Revenue Collected</div>
+        <div class="rev-value green" id="rRevenue">₹0</div>
+      </div>
+      <div class="rev-item">
+        <div class="rev-label">Pending Pickup</div>
+        <div class="rev-value blue" id="rPending">0</div>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Search by name or order ID..." oninput="applyFilter()" />
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Time</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable">
+          <tr><td colspan="8" class="empty">Loading orders...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, updateDoc, doc,
+      onSnapshot, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3u6NK--67YgV4CKumPevfUijqLnMFzY0",
+      authDomain: "messorderingsystem.firebaseapp.com",
+      projectId: "messorderingsystem",
+      storageBucket: "messorderingsystem.firebasestorage.app",
+      messagingSenderId: "1036262149494",
+      appId: "1:1036262149494:web:888f6b1fb4581c11553e57"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function toast(msg, type = "") {
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById("toastContainer").appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "—";
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function isToday(ts) {
+      if (!ts) return false;
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toDateString() === new Date().toDateString();
+    }
+
+    let allOrders = [];
+
+    window.applyFilter = () => {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = q
+        ? allOrders.filter(o =>
+            (o.customerName || "").toLowerCase().includes(q) ||
+            (o.orderId || "").toLowerCase().includes(q))
+        : allOrders;
+      renderTable(filtered);
+    };
+
+    function renderTable(orders) {
+      const tbody = document.getElementById("ordersTable");
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No orders found</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => {
+        const itemsStr = (o.items || []).map(i => `${i.name} ×${i.qty}`).join(", ");
+        return `
+          <tr>
+            <td><span class="order-id">#${o.orderId || "—"}</span></td>
+            <td>
+              <div style="font-weight:600">${o.customerName || "Unknown"}</div>
+              ${o.room ? `<div style="font-size:0.78rem;color:var(--muted)">${o.room}</div>` : ""}
+            </td>
+            <td class="items-cell"><div title="${itemsStr}">${itemsStr}</div></td>
+            <td style="font-weight:700;color:var(--accent)">₹${o.total}</td>
+            <td>${formatTime(o.timestamp)}</td>
+            <td><span class="badge ${o.paid ? 'paid' : 'pending-pay'}">${o.paid ? "✅ Paid" : "⚠️ Unpaid"}</span></td>
+            <td><span class="badge ${o.picked ? 'picked' : 'waiting'}">${o.picked ? "Picked" : "Waiting"}</span></td>
+            <td>
+              ${!o.picked
+                ? `<button class="btn-confirm" onclick="confirmPickup('${o.docId}')">✅ Picked Up</button>`
+                : `<button class="btn-done" disabled>Done</button>`}
+            </td>
+          </tr>`;
+      }).join("");
+    }
+
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snapshot) => {
+      allOrders = [];
+      snapshot.forEach(d => allOrders.push({ docId: d.id, ...d.data() }));
+
+      const today = allOrders.filter(o => isToday(o.timestamp));
+      document.getElementById("rTotal").textContent = today.length;
+      document.getElementById("rRevenue").textContent = "₹" + today.filter(o => o.paid).reduce((s, o) => s + (o.total || 0), 0);
+      document.getElementById("rPending").textContent = today.filter(o => !o.picked).length;
+
+      applyFilter();
+    });
+
+    window.confirmPickup = async (docId) => {
+      await updateDoc(doc(db, "orders", docId), { picked: true, status: "done" });
+      toast("Order marked as picked up ✅", "success");
+    };
+  </script>
+</body>
+</html>

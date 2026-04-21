@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnacItUp — Welcome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fcfaf8;
+      --surface: #ffffff;
+      --surface2: #f5f0ea;
+      --accent: #d6a3a3;
+      --text: #4a4036;
+      --muted: #a3988e;
+      --border: rgba(74, 64, 54, 0.08);
+      --radius: 18px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: var(--font-body); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+    }
+    .login-card { 
+      background: var(--surface); 
+      padding: 40px; 
+      border-radius: var(--radius); 
+      border: 1px solid var(--border); 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.03); 
+      text-align: center; 
+      max-width: 400px; 
+      width: 90%; 
+    }
+    .logo { font-family: var(--font-head); font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; }
+    .logo span { color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 32px; }
+    .btn { 
+      display: block; 
+      width: 100%; 
+      padding: 14px; 
+      border-radius: 12px; 
+      font-family: var(--font-head); 
+      font-size: 1rem; 
+      font-weight: 700; 
+      text-decoration: none; 
+      margin-bottom: 12px; 
+      transition: transform 0.2s, opacity 0.2s; 
+    }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .btn-student { background: var(--accent); color: white; border: none; }
+    .btn-admin { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo">SnacIt<span>Up</span></div>
+    <div class="subtitle">Click, order, and eat.</div>
+    <a href="index.html" class="btn btn-student">Continue as Student →</a>
+    <a href="admin.html" class="btn btn-admin">Login as Admin</a>
+  </div>
+</body>
+</html>

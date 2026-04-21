@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnacItUp — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fcfaf8;
+      --surface: #ffffff;
+      --surface2: #f5f0ea;
+      --accent: #d6a3a3;
+      --green: #8cb38c;
+      --red: #d98c8c;
+      --yellow: #d1b87a;
+      --blue: #8ca3d9;
+      --text: #4a4036;
+      --muted: #a3988e;
+      --border: rgba(74, 64, 54, 0.08);
+      --radius: 14px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+    }
+
+    .logo { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; margin-bottom: 32px; padding: 0 8px; }
+    .logo span { color: var(--accent); }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .nav-item.active { color: var(--accent); }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* MAIN */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      padding: 28px;
+      min-height: 100vh;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    h2.page-title {
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 60px; height: 60px;
+      border-radius: 0 0 0 60px;
+      opacity: 0.15;
+    }
+
+    .stat-card.orange::before { background: var(--accent); }
+    .stat-card.green::before { background: var(--green); }
+    .stat-card.blue::before { background: var(--blue); }
+    .stat-card.yellow::before { background: var(--yellow); }
+
+    .stat-icon { font-size: 1.6rem; margin-bottom: 12px; }
+    .stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-family: var(--font-head); font-size: 2rem; font-weight: 800; }
+
+    .stat-card.orange .stat-value { color: var(--accent); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+
+    /* ORDERS GRID */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .order-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      transition: border-color 0.2s;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card.picked { border-color: rgba(140, 179, 140, 0.25); opacity: 0.6; }
+
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .order-id {
+      font-family: var(--font-head);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .order-name { font-weight: 600; font-size: 1rem; margin-top: 2px; }
+    .order-room { font-size: 0.8rem; color: var(--muted); }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.pending { background: rgba(209, 184, 122, 0.15); color: var(--yellow); }
+    .badge.picked { background: rgba(140, 179, 140, 0.15); color: var(--green); }
+    .badge.paid { background: rgba(140, 163, 217, 0.15); color: var(--blue); }
+
+    .order-items { margin: 10px 0; font-size: 0.85rem; color: var(--muted); }
+    .order-items li { list-style: none; padding: 3px 0; border-bottom: 1px solid var(--border); }
+
+    .order-total { font-weight: 700; color: var(--accent); font-size: 1rem; margin: 10px 0; }
+
+    .order-time { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; }
+
+    .order-actions { display: flex; gap: 8px; }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-red { background: rgba(217, 140, 140, 0.15); color: var(--red); border: 1px solid rgba(217, 140, 140, 0.2); }
+    .btn-muted { background: var(--surface2); color: var(--muted); }
+    .btn-orange { background: var(--accent); color: white; }
+
+    /* MENU MANAGEMENT */
+    .menu-mgmt { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+
+    .add-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .add-form h3 { font-family: var(--font-head); font-size: 1.1rem; margin-bottom: 18px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group select option { background: var(--surface2); }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-family: var(--font-head);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .submit-btn:hover { opacity: 0.9; }
+
+    .seed-btn {
+      width: 100%;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 11px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .seed-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    .menu-list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .menu-item-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mi-name { font-weight: 600; font-size: 0.95rem; }
+    .mi-price { color: var(--accent); font-weight: 700; }
+    .mi-actions { display: flex; gap: 6px; }
+
+    /* TOAST */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; animation: toastIn 0.3s ease; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .toast.success { border-color: rgba(140, 179, 140, 0.4); color: var(--green); }
+    .toast.error { border-color: rgba(217, 140, 140, 0.4); color: var(--red); }
+
+    /* FILTERS */
+    .filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; border-radius: 50px; cursor: pointer; font-family: var(--font-body); font-size: 0.85rem; transition: all 0.15s; }
+    .filter-btn.active, .filter-btn:hover { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .empty-state { text-align: center; padding: 60px; color: var(--muted); font-size: 0.9rem; }
+    .empty-state div { font-size: 2.5rem; margin-bottom: 12px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 16px; }
+      .menu-mgmt { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo">SnacIt<span>Up</span></div>
+    <div class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</div>
+    <div class="nav-item" onclick="showPage('orders')">📦 Live Orders</div>
+    <div class="nav-item" onclick="showPage('menu')">🍽️ Menu</div>
+    <a href="login.html" class="nav-item" style="margin-top: 16px;">🚪 Logout</a>
+    <div class="sidebar-bottom">
+      <div style="font-size:0.8rem; color: var(--muted)">
+        <span class="status-dot"></span> Live updates on
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+
+    <div class="page active" id="page-dashboard">
+      <h2 class="page-title">Dashboard</h2>
+      <div class="stats-grid">
+        <div class="stat-card orange">
+          <div class="stat-icon">📦</div>
+          <div class="stat-label">Total Orders Today</div>
+          <div class="stat-value" id="statTotal">0</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-label">Pending</div>
+          <div class="stat-value" id="statPending">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Picked Up</div>
+          <div class="stat-value" id="statPicked">0</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Revenue Today</div>
+          <div class="stat-value" id="statRevenue">₹0</div>
+        </div>
+      </div>
+
+      <h3 style="font-family:var(--font-head);margin-bottom:14px;font-size:1.1rem;">Recent Orders</h3>
+      <div class="orders-grid" id="recentOrders"></div>
+    </div>
+
+    <div class="page" id="page-orders">
+      <h2 class="page-title">Live Orders</h2>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="filterOrders('all', this)">All</button>
+        <button class="filter-btn" onclick="filterOrders('pending', this)">⏳ Pending</button>
+        <button class="filter-btn" onclick="filterOrders('picked', this)">✅ Picked Up</button>
+      </div>
+      <div class="orders-grid" id="allOrders"></div>
+    </div>
+
+    <div class="page" id="page-menu">
+      <h2 class="page-title">Menu Management</h2>
+      <div class="menu-mgmt">
+        <div>
+          <div class="add-form">
+            <h3 id="formTitle">➕ Add Item</h3>
+            <input type="hidden" id="editId" />
+            <div class="form-group">
+              <label>Item Name *</label>
+              <input type="text" id="itemName" placeholder="e.g. Masala Dosa" />
+            </div>
+            <div class="form-group">
+              <label>Emoji (Optional)</label>
+              <input type="text" id="itemEmoji" placeholder="e.g. 🥞" maxlength="2" />
+            </div>
+            <div class="form-group">
+              <label>Price (₹) *</label>
+              <input type="number" id="itemPrice" placeholder="e.g. 50" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="itemCategory">
+                <option value="snacks">🍟 Snacks</option>
+                <option value="meals">🍱 Meals</option>
+                <option value="beverages">☕ Beverages</option>
+                <option value="breakfast">🌅 Breakfast</option>
+              </select>
+            </div>
+            <button class="submit-btn" onclick="saveItem()">Save Item</button>
+            <button class="seed-btn" onclick="seedMenu()">🌱 Load Sample Menu (20 items)</button>
+          </div>
+        </div>
+        <div>
+          <div class="menu-list-grid" id="menuList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, updateDoc, deleteDoc,
+      doc, onSnapshot, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3u6NK--67YgV4CKumPevfUijqLnMFzY0",
+      authDomain: "messorderingsystem.firebaseapp.com",
+      projectId: "messorderingsystem",
+      storageBucket: "messorderingsystem.firebasestorage.app",
+      messagingSenderId: "1036262149494",
+      appId: "1:1036262149494:web:888f6b1fb4581c11553e57"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Toast
+    function toast(msg, type = "") {
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById("toastContainer").appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // Time formatter
+    function formatTime(ts) {
+      if (!ts) return "—";
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) +
+             " · " + d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    }
+
+    // Today filter
+    function isToday(ts) {
+      if (!ts) return false;
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      const today = new Date();
+      return d.toDateString() === today.toDateString();
+    }
+
+    // Page nav
+    window.showPage = (name) => {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.getElementById("page-" + name).classList.add("active");
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      event.target.classList.add("active");
+    };
+
+    // Render order card
+    function orderCard(docId, data, compact = false) {
+      const items = (data.items || []).map(i => `<li>${i.name} × ${i.qty} — ₹${i.price * i.qty}</li>`).join("");
+      return `
+        <div class="order-card ${data.picked ? 'picked' : ''}" id="card-${docId}">
+          <div class="order-top">
+            <div>
+              <div class="order-id">#${data.orderId || "—"}</div>
+              <div class="order-name">${data.customerName || "Unknown"}</div>
+              ${data.room ? `<div class="order-room">Room: ${data.room}</div>` : ""}
+            </div>
+            <span class="badge ${data.picked ? 'picked' : 'pending'}">${data.picked ? "Picked" : "Pending"}</span>
+          </div>
+          <ul class="order-items">${items}</ul>
+          <div class="order-total">Total: ₹${data.total}</div>
+          <div class="order-time">${formatTime(data.timestamp)}</div>
+          ${!compact ? `
+          <div class="order-actions">
+            ${!data.picked
+              ? `<button class="btn btn-green" onclick="markPicked('${docId}')">✅ Mark Picked Up</button>`
+              : `<button class="btn btn-muted" disabled>✅ Done</button>`}
+            <button class="btn btn-red" onclick="deleteOrder('${docId}')">🗑</button>
+          </div>` : ""}
+        </div>`;
+    }
+
+    // ORDERS LISTENER
+    let allOrdersData = [];
+    let currentFilter = "all";
+
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snapshot) => {
+      allOrdersData = [];
+      snapshot.forEach(d => allOrdersData.push({ docId: d.id, ...d.data() }));
+
+      updateStats();
+      renderOrders();
+      renderRecent();
+    });
+
+    function updateStats() {
+      const today = allOrdersData.filter(o => isToday(o.timestamp));
+      document.getElementById("statTotal").textContent = today.length;
+      document.getElementById("statPending").textContent = today.filter(o => !o.picked).length;
+      document.getElementById("statPicked").textContent = today.filter(o => o.picked).length;
+      document.getElementById("statRevenue").textContent = "₹" + today.reduce((s, o) => s + (o.total || 0), 0);
+    }
+
+    function renderOrders() {
+      const container = document.getElementById("allOrders");
+      let filtered = allOrdersData;
+      if (currentFilter === "pending") filtered = allOrdersData.filter(o => !o.picked);
+      if (currentFilter === "picked") filtered = allOrdersData.filter(o => o.picked);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div>📭</div>No orders found</div>`;
+        return;
+      }
+      container.innerHTML = filtered.map(o => orderCard(o.docId, o)).join("");
+    }
+
+    function renderRecent() {
+      const recent = allOrdersData.slice(0, 6);
+      document.getElementById("recentOrders").innerHTML = recent.length
+        ? recent.map(o => orderCard(o.docId, o, true)).join("")
+        : `<div class="empty-state"><div>📭</div>No orders yet</div>`;
+    }
+
+    window.filterOrders = (filter, btn) => {
+      currentFilter = filter;
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderOrders();
+    };
+
+    window.markPicked = async (docId) => {
+      await updateDoc(doc(db, "orders", docId), { picked: true, status: "done" });
+      toast("Order marked as picked up ✅", "success");
+    };
+
+    window.deleteOrder = async (docId) => {
+      if (!confirm("Delete this order?")) return;
+      await deleteDoc(doc(db, "orders", docId));
+      toast("Order deleted", "");
+    };
+
+    // MENU MANAGEMENT
+    let menuData = [];
+
+    onSnapshot(collection(db, "menu"), (snapshot) => {
+      menuData = [];
+      snapshot.forEach(d => menuData.push({ id: d.id, ...d.data() }));
+      renderMenu();
+    });
+
+    function renderMenu() {
+      const container = document.getElementById("menuList");
+      if (menuData.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div>🍽️</div>No menu items</div>`;
+        return;
+      }
+      container.innerHTML = menuData.map(item => `
+        <div class="menu-item-card">
+          <div style="font-size: 1.5rem; margin-bottom: 4px;">${item.emoji || "🍽️"}</div>
+          <div class="mi-name">${item.name}</div>
+          <div class="mi-price">₹${item.price}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${item.category || "snacks"}</div>
+          <div class="mi-actions">
+            <button class="btn btn-orange" style="flex:1" onclick="editItem('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.price}, '${item.category || "snacks"}', '${item.emoji || ""}')">✏️ Edit</button>
+            <button class="btn btn-red" style="flex:1" onclick="deleteItem('${item.id}')">🗑</button>
+          </div>
+        </div>`).join("");
+    }
+
+    window.saveItem = async () => {
+      const name = document.getElementById("itemName").value.trim();
+      const price = parseInt(document.getElementById("itemPrice").value);
+      const category = document.getElementById("itemCategory").value;
+      const emoji = document.getElementById("itemEmoji").value.trim();
+      const editId = document.getElementById("editId").value;
+
+      if (!name || !price) { toast("Name and price are required", "error"); return; }
+
+      if (editId) {
+        await updateDoc(doc(db, "menu", editId), { name, price, category, emoji });
+        toast("Item updated ✅", "success");
+        document.getElementById("editId").value = "";
+        document.getElementById("formTitle").textContent = "➕ Add Item";
+      } else {
+        await addDoc(collection(db, "menu"), { name, price, category, emoji });
+        toast("Item added ✅", "success");
+      }
+
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("itemEmoji").value = "";
+    };
+
+    window.editItem = (id, name, price, category, emoji) => {
+      document.getElementById("editId").value = id;
+      document.getElementById("itemName").value = name;
+      document.getElementById("itemPrice").value = price;
+      document.getElementById("itemCategory").value = category;
+      document.getElementById("itemEmoji").value = emoji && emoji !== 'undefined' ? emoji : "";
+      document.getElementById("formTitle").textContent = "✏️ Edit Item";
+      document.querySelector(".add-form")?.scrollIntoView();
+      showPage("menu");
+    };
+
+    window.deleteItem = async (id) => {
+      if (!confirm("Delete this item?")) return;
+      await deleteDoc(doc(db, "menu", id));
+      toast("Item deleted", "");
+    };
+
+    window.seedMenu = async () => {
+      const sampleMenu = [
+        { name: "Masala Dosa", price: 50, category: "breakfast", emoji: "🫓" },
+        { name: "Samosa", price: 20, category: "snacks", emoji: "🔺" },
+        { name: "Coffee", price: 15, category: "beverages", emoji: "☕" },
+        { name: "Chole Bhature", price: 80, category: "meals", emoji: "🫘" },
+        { name: "French Fries", price: 50, category: "snacks", emoji: "🍟" }
+      ];
+      for (const item of sampleMenu) await addDoc(collection(db, "menu"), item);
+      toast("Sample items added! 🎉", "success");
+    };
+  </script>
+</body>
+</html>

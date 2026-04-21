@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnacItUp — Counter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fcfaf8;
+      --surface: #ffffff;
+      --surface2: #f5f0ea;
+      --accent: #d6a3a3;
+      --green: #8cb38c;
+      --yellow: #d1b87a;
+      --text: #4a4036;
+      --muted: #a3988e;
+      --border: rgba(74, 64, 54, 0.08);
+      --radius: 16px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+    nav {
+      background: rgba(252, 250, 248, 0.95); border-bottom: 1px solid var(--border);
+      padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10; backdrop-filter: blur(20px);
+    }
+    .logo { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; }
+    .logo span { color: var(--accent); }
+    .counter-badge { background: var(--surface2); border: 1px solid var(--border); padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; color: var(--muted); }
+    .counter-badge strong { color: var(--yellow); }
+    .main { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+    .section-title { font-family: var(--font-head); font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--yellow); animation: pulse 1.5s infinite; }
+    .dot.green { background: var(--green); }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 40px; }
+    .order-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; transition: border-color 0.2s; animation: fadeUp 0.3s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .order-card.urgent { border-color: rgba(217, 140, 140, 0.4); }
+    .order-card.ready { border-color: rgba(140, 179, 140, 0.3); opacity: 0.7; }
+    .order-id { font-family: var(--font-head); font-size: 0.85rem; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+    .order-name { font-weight: 600; font-size: 1.05rem; }
+    .order-room { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+    .items-list { margin: 10px 0; }
+    .items-list li { list-style: none; font-size: 0.88rem; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .items-list li:last-child { border-bottom: none; }
+    .order-time { font-size: 0.75rem; color: var(--muted); margin: 10px 0; }
+    .done-btn {
+      width: 100%; background: var(--green); color: white; border: none;
+      padding: 12px; border-radius: 10px; font-family: var(--font-body); font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; margin-top: 12px; transition: opacity 0.2s;
+    }
+    .done-btn:hover { opacity: 0.85; }
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty div:first-child { font-size: 3rem; margin-bottom: 12px; }
+    .toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .toast { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 11px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 500; animation: toastIn 0.3s ease; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .toast.success { border-color: rgba(140, 179, 140, 0.4); color: var(--green); }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">SnacIt<span>Up</span> — Counter</div>
+    <div class="counter-badge">Queue: <strong id="queueCount">0</strong> orders</div>
+  </nav>
+
+  <div class="main">
+    <div class="section-title"><span class="dot"></span> Pending Orders</div>
+    <div class="orders-grid" id="pendingOrders"></div>
+
+    <hr class="divider" />
+
+    <div class="section-title"><span class="dot green"></span> Completed Today</div>
+    <div class="orders-grid" id="doneOrders"></div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, updateDoc, doc,
+      onSnapshot, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3u6NK--67YgV4CKumPevfUijqLnMFzY0",
+      authDomain: "messorderingsystem.firebaseapp.com",
+      projectId: "messorderingsystem",
+      storageBucket: "messorderingsystem.firebasestorage.app",
+      messagingSenderId: "1036262149494",
+      appId: "1:1036262149494:web:888f6b1fb4581c11553e57"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function toast(msg, type = "") {
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById("toastContainer").appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "—";
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function isToday(ts) {
+      if (!ts) return false;
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toDateString() === new Date().toDateString();
+    }
+
+    function minutesAgo(ts) {
+      if (!ts) return 0;
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return Math.floor((Date.now() - d.getTime()) / 60000);
+    }
+
+    function renderCard(docId, data, showDone) {
+      const items = (data.items || []).map(i =>
+        `<li><span>${i.name} × ${i.qty}</span><span>₹${i.price * i.qty}</span></li>`
+      ).join("");
+      const mins = minutesAgo(data.timestamp);
+      const urgent = !data.picked && mins > 10;
+
+      return `
+        <div class="order-card ${data.picked ? 'ready' : ''} ${urgent ? 'urgent' : ''}">
+          <div class="order-id">#${data.orderId || "—"}</div>
+          <div class="order-name">${data.customerName || "Customer"}</div>
+          ${data.room ? `<div class="order-room">${data.room}</div>` : ""}
+          <ul class="items-list">${items}</ul>
+          <div class="order-time">Ordered at ${formatTime(data.timestamp)} · ${mins}m ago ${urgent ? "⚠️" : ""}</div>
+          ${showDone
+            ? `<button class="done-btn" onclick="markReady('${docId}')">✅ Mark Picked Up</button>`
+            : `<div style="color:var(--green);font-size:0.85rem;font-weight:600;margin-top:12px;">✅ Picked up</div>`
+          }
+        </div>`;
+    }
+
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snapshot) => {
+      const todayOrders = [];
+      snapshot.forEach(d => {
+        const data = d.data();
+        if (isToday(data.timestamp)) todayOrders.push({ docId: d.id, ...data });
+      });
+
+      const pending = todayOrders.filter(o => o.paid && !o.picked);
+      const done = todayOrders.filter(o => o.picked);
+
+      document.getElementById("queueCount").textContent = pending.length;
+
+      const pendingEl = document.getElementById("pendingOrders");
+      const doneEl = document.getElementById("doneOrders");
+
+      pendingEl.innerHTML = pending.length
+        ? pending.map(o => renderCard(o.docId, o, true)).join("")
+        : `<div class="empty"><div>🎉</div>No pending orders!</div>`;
+
+      doneEl.innerHTML = done.length
+        ? done.map(o => renderCard(o.docId, o, false)).join("")
+        : `<div class="empty" style="padding:20px"><div style="font-size:1.5rem">—</div>None yet</div>`;
+    });
+
+    window.markReady = async (docId) => {
+      await updateDoc(doc(db, "orders", docId), { picked: true, status: "done" });
+      toast("Order marked as picked up! ✅", "success");
+    };
+  </script>
+</body>
+</html>

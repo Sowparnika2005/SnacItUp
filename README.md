@@ -1,7 +1,5 @@
 # 🚀 SnacItUp — Premium Campus Mess Ordering System  
 
-![SnacItUp Banner](https://via.placeholder.com/1200x600/0ea5e9/ffffff?text=SnacItUp+-+Smart+Mess+Ordering)
-
 SnacItUp is a modern, production-ready campus food ordering web application designed to streamline mess operations and improve student experience. Inspired by real-world food delivery apps, it provides a seamless way for students to browse menus, place orders, pay online, and track them in real time.
 
 ---
